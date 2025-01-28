@@ -98,6 +98,8 @@ namespace Cars.Controllers
             return RedirectToAction(nameof(Index));
         }
 
+        [HttpGet("Car/Delete/{id}")]
+
         public IActionResult Delete(int id)
         {
             var car = vroomDbContext.Cars.Find(id);
@@ -107,7 +109,43 @@ namespace Cars.Controllers
             }
             vroomDbContext.Cars.Remove(car);
             vroomDbContext.SaveChanges();
+           
             return RedirectToAction(nameof(Index));
         }
+        // [HttpGet("Car/Edit/{id}")]
+        // public IActionResult Edit(int id)
+        // {
+        //     return View(CarVM);
+        // }
+
+        [HttpGet("Car/Edit/{id}")]
+public IActionResult Edit(int id)
+{
+    // Find the car by its ID
+    CarVM.Car = vroomDbContext.Cars.Find(id);
+    if (CarVM.Car == null)
+    {
+        return NotFound();
+    }
+    // Populate the ViewModel with existing makes and models for dropdowns
+    CarVM.Makes = vroomDbContext.Makes.ToList();
+    CarVM.Models = vroomDbContext.Models.ToList();
+
+    return View(CarVM);
+}
+
+
+ [HttpPost, ActionName("Edit")]
+        public IActionResult EditPost()
+        {
+           vroomDbContext.Update(this.CarVM.Car);
+           vroomDbContext.SaveChanges();
+           return RedirectToAction(nameof(Index));
+        
+        }
+
+
+
+
     }
 }

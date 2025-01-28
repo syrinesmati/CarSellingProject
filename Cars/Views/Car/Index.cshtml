@@ -23,6 +23,11 @@
             </div>
         }
     </div>
+    <div>
+        <a asp-controller="Car" asp-action="Create" style="background-color: steelblue">
+                    Add Car
+                </a>
+    </div>
 
     <!-- Search Form -->
     <form method="get" action="@Url.Action("Index", "Car")">
@@ -69,6 +74,17 @@
                         <b>Email:</b> @Html.DisplayFor(m => item.SellerEmail)<br />
                         <b>Phone:</b> @Html.DisplayFor(m => item.SellerPhone)
                     </td>
+                    <td><div>
+        <a asp-controller="Car" asp-action="Delete" asp-route-id=@item.Id style="background-color: steelblue">
+                    Delete Car
+                </a>
+    </div></td>
+
+    <td><div>
+        <a asp-controller="Car" asp-action="Edit" asp-route-id=@item.Id style="background-color: steelblue">
+                   Edit Car
+                </a>
+    </div></td>
                     @if (User.IsInRole("Admin") || User.IsInRole("Executive"))
                     {
                         <partial name="_TableButtonPartialofCars" model="item.Id" />
