@@ -1,13 +1,14 @@
 ﻿using Cars.AppDbContext;
-using Cars.Helpers;
 using Cars.Models;
 using Cars.Models.ViewModels;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.IO;
-using Microsoft.AspNetCore.Hosting;
 using cloudscribe.Pagination.Models;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.IO;
+using System.Linq;
+
 namespace Cars.Controllers
 {
     public class CarController : Controller
@@ -15,9 +16,9 @@ namespace Cars.Controllers
         private readonly VroomDbContext vroomDbContext;
         private readonly IWebHostEnvironment _hostingEnvironment;
 
-
         [BindProperty]
         public CarViewModel CarVM { get; set; }
+
         public CarController(VroomDbContext vroomDbContext, IWebHostEnvironment hostingEnvironment)
         {
             this.vroomDbContext = vroomDbContext;
@@ -25,60 +26,41 @@ namespace Cars.Controllers
             {
                 Makes = vroomDbContext.Makes.ToList(),
                 Models = vroomDbContext.Models.ToList(),
-                Car = new Models.Car(),
+                Car = new Car()
             };
             _hostingEnvironment = hostingEnvironment;
-
         }
 
-
-        public IActionResult Index(String searchString, String sortOrder,int pageNumber=1, int pageSize=2)
+        public IActionResult Index(string searchString, string sortOrder, int pageNumber = 1, int pageSize = 2)
         {
             ViewBag.CurrentSortOrder = sortOrder;
             ViewBag.CurrentFilter = searchString;
-            ViewBag.PriceSortParam = String.IsNullOrEmpty(sortOrder) ? "Price_desc" : "";
-            int ExcludeRecords = (pageSize * pageNumber) - pageSize;
-            var Cars = from b in vroomDbContext.Cars.Include(m => m.Make).Include(m => m.Model)
-                        select b;
-            var CarCount = Cars.Count();
-            if (!String.IsNullOrEmpty(searchString) )
+            ViewBag.PriceSortParam = string.IsNullOrEmpty(sortOrder) ? "Price_desc" : "";
+
+            int excludeRecords = (pageSize * pageNumber) - pageSize;
+
+            var cars = vroomDbContext.Cars.Include(m => m.Make).Include(m => m.Model).AsQueryable();
+
+            if (!string.IsNullOrEmpty(searchString))
             {
-                Cars = Cars.Where(b => b.Make.Name.Contains(searchString));
-                CarCount = Cars.Count();
+                cars = cars.Where(b => b.Make.Name.Contains(searchString));
             }
-            //Sorting Logic
-            switch (sortOrder)
+
+            cars = sortOrder == "Price_desc"
+                ? cars.OrderByDescending(b => b.Price)
+                : cars.OrderBy(b => b.Price);
+
+            var pagedResult = new PagedResult<Car>
             {
-                case "Price_desc":
-                    Cars = Cars.OrderByDescending(b => b.Price);
-                    break;
-                default:
-                    Cars = Cars.OrderBy(b => b.Price);
-                    break;
-            }
-            Cars = Cars
-                .Skip(ExcludeRecords)
-                .Take(pageSize);
-            var result = new PagedResult<Car>
-            {
-                Data = Cars.AsNoTracking().ToList(),
-                TotalItems = CarCount,
+                Data = cars.Skip(excludeRecords).Take(pageSize).AsNoTracking().ToList(),
+                TotalItems = cars.Count(),
                 PageNumber = pageNumber,
                 PageSize = pageSize
             };
-            return View(result);
-        }
 
-        [HttpGet]
-        public IActionResult Edit(int id)
-        {
-            CarVM.Car= vroomDbContext.Cars.SingleOrDefault(b=> b.Id == id);
-            CarVM.Models= vroomDbContext.Models.Where(m=>m.Make== CarVM.Car.Make);
-            if (CarVM.Car == null )
-            {
-                return NotFound();
-            }
-            return View(CarVM);
+            ViewBag.TotalPages = (int)Math.Ceiling((double)pagedResult.TotalItems / pageSize);
+
+            return View(pagedResult);
         }
 
         [HttpGet]
@@ -90,69 +72,42 @@ namespace Cars.Controllers
         [HttpPost, ActionName("Create")]
         public IActionResult CreatePost()
         {
-            //if (ModelState.IsValid)
-            //{
             vroomDbContext.Add(this.CarVM.Car);
             vroomDbContext.SaveChanges();
-            var CarId = CarVM.Car.Id;
-            string wwrootPath = _hostingEnvironment.WebRootPath;
+            var carId = CarVM.Car.Id;
+
+            string wwwrootPath = _hostingEnvironment.WebRootPath;
             var files = HttpContext.Request.Form.Files;
-            var savedCar = vroomDbContext.Cars.Find(CarId);
+            var savedCar = vroomDbContext.Cars.Find(carId);
+
             if (files.Count != 0)
             {
-                var ImagePath = @"images\Car\";
+                var imagePath = @"images\Car\";
                 var extension = Path.GetExtension(files[0].FileName);
-                var relativeImagePath = ImagePath + CarId + extension;
-                var absImagePath = Path.Combine(wwrootPath, relativeImagePath);
+                var relativeImagePath = imagePath + carId + extension;
+                var absoluteImagePath = Path.Combine(wwwrootPath, relativeImagePath);
 
-                using (var FileStream = new FileStream(absImagePath, FileMode.Create))
+                using (var fileStream = new FileStream(absoluteImagePath, FileMode.Create))
                 {
-                    files[0].CopyTo(FileStream);
+                    files[0].CopyTo(fileStream);
                 }
                 savedCar.ImagePath = relativeImagePath;
                 vroomDbContext.SaveChanges();
             }
 
             return RedirectToAction(nameof(Index));
-            //}
-            //return View(modelVm);
         }
-
 
         public IActionResult Delete(int id)
         {
+            var car = vroomDbContext.Cars.Find(id);
+            if (car == null)
             {
-                var Car = vroomDbContext.Cars.Find(id);
-                if (Car == null)
-                {
-                    return NotFound();
-                }
-                vroomDbContext.Cars.Remove(Car);
-                vroomDbContext.SaveChanges();
-                return (RedirectToAction(nameof(Index)));
+                return NotFound();
             }
+            vroomDbContext.Cars.Remove(car);
+            vroomDbContext.SaveChanges();
+            return RedirectToAction(nameof(Index));
         }
-
-
-        //[HttpGet]
-        //public IActionResult Edit(int id)
-        //{
-        //    CarVM.Car = vroomDbContext.Cars.Include(m => m.Make).Include(m => m.Model).SingleOrDefault(m => m.Id == id);
-        //    if (CarVM.Car == null)
-        //    {
-        //        return NotFound();
-        //    }
-        //    return View(CarVM);
-        //}
-
-
-        //[HttpPost, ActionName("Edit")]
-        //public IActionResult EditPost()
-        //{
-        //    vroomDbContext.Update(this.CarVM.Car);
-        //    vroomDbContext.SaveChanges();
-        //    return (RedirectToAction(nameof(Index)));
-        //
-        //}
     }
 }
