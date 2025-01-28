@@ -74,26 +74,26 @@ namespace Cars.Controllers
         {
             vroomDbContext.Add(this.CarVM.Car);
             vroomDbContext.SaveChanges();
-            var carId = CarVM.Car.Id;
+            // var carId = CarVM.Car.Id;
 
-            string wwwrootPath = _hostingEnvironment.WebRootPath;
-            var files = HttpContext.Request.Form.Files;
-            var savedCar = vroomDbContext.Cars.Find(carId);
+            // string wwwrootPath = _hostingEnvironment.WebRootPath;
+            // var files = HttpContext.Request.Form.Files;
+            // var savedCar = vroomDbContext.Cars.Find(carId);
 
-            if (files.Count != 0)
-            {
-                var imagePath = @"images\Car\";
-                var extension = Path.GetExtension(files[0].FileName);
-                var relativeImagePath = imagePath + carId + extension;
-                var absoluteImagePath = Path.Combine(wwwrootPath, relativeImagePath);
+            // if (files.Count != 0)
+            // {
+            //     var imagePath = @"images\Car\";
+            //     var extension = Path.GetExtension(files[0].FileName);
+            //     var relativeImagePath = imagePath + carId + extension;
+            //     var absoluteImagePath = Path.Combine(wwwrootPath, relativeImagePath);
 
-                using (var fileStream = new FileStream(absoluteImagePath, FileMode.Create))
-                {
-                    files[0].CopyTo(fileStream);
-                }
-                savedCar.ImagePath = relativeImagePath;
-                vroomDbContext.SaveChanges();
-            }
+            //     using (var fileStream = new FileStream(absoluteImagePath, FileMode.Create))
+            //     {
+            //         files[0].CopyTo(fileStream);
+            //     }
+            //     savedCar.ImagePath = relativeImagePath;
+            //     vroomDbContext.SaveChanges();
+            // }
 
             return RedirectToAction(nameof(Index));
         }
