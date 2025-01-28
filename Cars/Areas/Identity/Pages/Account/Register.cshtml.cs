@@ -128,27 +128,24 @@ namespace Cars.Areas.Identity.Pages.Account
 
         public async Task<IActionResult> OnPostAsync(string returnUrl = null)
         {
-            returnUrl ??= Url.Content("~/");
+            // Validate and clean returnUrl
+            returnUrl = !string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl) ? returnUrl : Url.Content("~/");
             ExternalLogins = (await _signInManager.GetExternalAuthenticationSchemesAsync()).ToList();
+
             if (ModelState.IsValid)
             {
-                var user = new ApplicationUser() { UserName = Input.Username, Email = Input.Email };
+                var user = new ApplicationUser
+                {
+                    UserName = Input.Username,
+                    Email = Input.Email,
+                    PhoneNumber = Input.PhoneNumber,
+                    PhoneNumber2 = Input.PhoneNumber2 // Assuming this is part of your ApplicationUser model
+                };
 
-                await _userStore.SetUserNameAsync(user, Input.Username, CancellationToken.None);
-                await _emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
                 var result = await _userManager.CreateAsync(user, Input.Password);
 
                 if (result.Succeeded)
                 {
-                    if (!await _roleManager.RoleExistsAsync("Admin"))
-                    {
-                        await _roleManager.CreateAsync(new IdentityRole("Admin"));
-                    }
-                    if (!await _roleManager.RoleExistsAsync("Executive"))
-                    {
-                        await _roleManager.CreateAsync(new IdentityRole("Executive"));
-                    }
-
                     if (Input.IsAdmin)
                     {
                         await _userManager.AddToRoleAsync(user, "Admin");
@@ -157,6 +154,7 @@ namespace Cars.Areas.Identity.Pages.Account
                     {
                         await _userManager.AddToRoleAsync(user, "Executive");
                     }
+
                     _logger.LogInformation("User created a new account with password.");
 
                     var userId = await _userManager.GetUserIdAsync(user);
@@ -181,6 +179,7 @@ namespace Cars.Areas.Identity.Pages.Account
                         return LocalRedirect(returnUrl);
                     }
                 }
+
                 foreach (var error in result.Errors)
                 {
                     ModelState.AddModelError(string.Empty, error.Description);
