@@ -132,12 +132,7 @@
     <None Include="wwwroot\lib\images\portfolio\portfolio-1.jpg" />
     <None Include="wwwroot\lib\images\portfolio\portfolio-2.jpg" />
     <None Include="wwwroot\lib\images\portfolio\portfolio-3.jpg" />
-    <None Include="wwwroot\lib\images\portfolio\portfolio-4.jpg" />
-    <None Include="wwwroot\lib\images\portfolio\portfolio-5.jpg" />
-    <None Include="wwwroot\lib\images\portfolio\portfolio-6.jpg" />
     <None Include="wwwroot\lib\images\portfolio\portfolio-7.jpg" />
-    <None Include="wwwroot\lib\images\portfolio\portfolio-8.jpg" />
-    <None Include="wwwroot\lib\images\portfolio\portfolio-9.jpg" />
     <None Include="wwwroot\lib\images\team\team-2.jpg" />
     <None Include="wwwroot\js\main.js" />
     <None Include="wwwroot\lib\vendor\aos\aos.css" />
